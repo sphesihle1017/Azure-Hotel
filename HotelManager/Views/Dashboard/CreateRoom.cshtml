@@ -8,6 +8,23 @@
 <div class="container mt-4">
     <h1 class="mb-4">Create New Room</h1>
 
+    <!-- Add this to display any TempData messages -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
     <div class="row">
         <div class="col-md-6">
             <div class="card">
@@ -16,19 +33,19 @@
                 </div>
                 <div class="card-body">
                     <form asp-action="CreateRoom" method="post">
-                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <div asp-validation-summary="All" class="text-danger"></div>
 
                         <div class="form-group mb-3">
-                            <label asp-for="HotelId" class="control-label">Hotel</label>
-                            <select asp-for="HotelId" class="form-control" asp-items="@(new SelectList(ViewBag.Hotels, "HotelId", "Name"))">
+                            <label asp-for="HotelId" class="control-label fw-bold">Hotel</label>
+                            <select asp-for="HotelId" class="form-control" asp-items="@(new SelectList(ViewBag.Hotels, "HotelId", "Name"))" required>
                                 <option value="">-- Select Hotel --</option>
                             </select>
                             <span asp-validation-for="HotelId" class="text-danger"></span>
                         </div>
 
                         <div class="form-group mb-3">
-                            <label asp-for="RoomDescription" class="control-label">Room Type</label>
-                            <select asp-for="RoomDescription" class="form-control">
+                            <label asp-for="RoomDescription" class="control-label fw-bold">Room Type</label>
+                            <select asp-for="RoomDescription" class="form-control" required>
                                 <option value="">-- Select Room Type --</option>
                                 <option value="Deluxe">Deluxe</option>
                                 <option value="Premium">Premium</option>
@@ -38,16 +55,22 @@
                         </div>
 
                         <div class="form-group mb-3">
-                            <label asp-for="PricePerNight" class="control-label">Price Per Night</label>
-                            <input asp-for="PricePerNight" class="form-control" />
+                            <label asp-for="PricePerNight" class="control-label fw-bold">Price Per Night (R)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R</span>
+                                <input asp-for="PricePerNight" class="form-control" type="number" step="0.01" min="1" required />
+                            </div>
                             <span asp-validation-for="PricePerNight" class="text-danger"></span>
+                            <small class="text-muted">Enter price in Rand (e.g., 1500.00)</small>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group mt-4">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-save"></i> Create Room
                             </button>
-                            <a asp-action="Rooms" class="btn btn-secondary">Cancel</a>
+                            <a asp-action="Rooms" class="btn btn-secondary">
+                                <i class="bi bi-x"></i> Cancel
+                            </a>
                         </div>
                     </form>
                 </div>
@@ -55,13 +78,42 @@
         </div>
     </div>
 </div>
+
 <style>
     footer {
         display: none !important;
     }
-</style>  
+
+    .input-group-text {
+        background-color: #1a3c40;
+        color: white;
+        border: none;
+    }
+</style>
+
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
+    <script>
+        $(document).ready(function() {
+            // Ensure decimal values are handled correctly
+            $('#PricePerNight').on('blur', function() {
+                var value = $(this).val();
+                if (value && !isNaN(value)) {
+                    // Format to 2 decimal places
+                    $(this).val(parseFloat(value).toFixed(2));
+                }
+            });
+
+            // Log form submission for debugging
+            $('form').on('submit', function() {
+                console.log('Form submitted');
+                console.log('HotelId: ' + $('#HotelId').val());
+                console.log('RoomDescription: ' + $('#RoomDescription').val());
+                console.log('PricePerNight: ' + $('#PricePerNight').val());
+            });
+        });
+    </script>
 }

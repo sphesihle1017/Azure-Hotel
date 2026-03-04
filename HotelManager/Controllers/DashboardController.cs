@@ -134,19 +134,72 @@ namespace HotelManager.Controllers
         }
 
         // POST: /Dashboard/CreateRoom - Create new room (Admin only)
+       
         [HttpPost]
         [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateRoom(Room room)
         {
-            if (ModelState.IsValid)
+            try
             {
-                _context.Add(room);
-                await _context.SaveChangesAsync();
+                // Log the incoming data for debugging
+                Console.WriteLine($"Creating Room - HotelId: {room.HotelId}, Description: {room.RoomDescription}, Price: {room.PricePerNight}");
 
-                TempData["Success"] = "Room created successfully!";
-                return RedirectToAction(nameof(Rooms));
+                // Remove validation for navigation property if it's causing issues
+                ModelState.Remove("Hotel");
+                ModelState.Remove("Bookings");
+
+                // Manual validation
+                if (room.HotelId <= 0)
+                {
+                    ModelState.AddModelError("HotelId", "Please select a hotel.");
+                }
+
+                if (string.IsNullOrEmpty(room.RoomDescription))
+                {
+                    ModelState.AddModelError("RoomDescription", "Please select a room type.");
+                }
+                else if (!new[] { "Deluxe", "Premium", "Presidential" }.Contains(room.RoomDescription))
+                {
+                    ModelState.AddModelError("RoomDescription", "Invalid room type selected.");
+                }
+
+                if (room.PricePerNight <= 0)
+                {
+                    ModelState.AddModelError("PricePerNight", "Price must be greater than 0.");
+                }
+
+                if (ModelState.IsValid)
+                {
+                    // Verify hotel exists
+                    var hotelExists = await _context.Hotels.AnyAsync(h => h.HotelId == room.HotelId);
+                    if (!hotelExists)
+                    {
+                        TempData["Error"] = "Selected hotel does not exist.";
+                        ViewBag.Hotels = await _context.Hotels.ToListAsync();
+                        return View(room);
+                    }
+
+                    _context.Add(room);
+                    await _context.SaveChangesAsync();
+
+                    TempData["Success"] = $"Room created successfully!";
+                    return RedirectToAction(nameof(Rooms));
+                }
             }
+            catch (DbUpdateException ex)
+            {
+                var innerMessage = ex.InnerException?.Message ?? ex.Message;
+                TempData["Error"] = $"Database error: {innerMessage}";
+                Console.WriteLine($"Error creating room: {innerMessage}");
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"Error creating room: {ex.Message}";
+                Console.WriteLine($"Error creating room: {ex.Message}");
+            }
+
+            // If we got this far, something failed, redisplay form
             ViewBag.Hotels = await _context.Hotels.ToListAsync();
             return View(room);
         }
