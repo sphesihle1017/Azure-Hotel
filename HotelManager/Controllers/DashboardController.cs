@@ -105,13 +105,29 @@ namespace HotelManager.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ManageCustomers()
         {
+            // Select only the properties you need
             var customers = await _context.Customers
-                .Include(c => c.Bookings)
-                .OrderBy(c => c.LastName)
+                .Select(c => new Customer
+                {
+                    CustomerId = c.CustomerId,
+                    FirstName = c.FirstName,
+                    LastName = c.LastName,
+                    Email = c.Email,
+                    PhoneNumber = c.PhoneNumber,
+                    Bookings = c.Bookings.Select(b => new Booking
+                    {
+                        BookingId = b.BookingId,
+                        CheckInDate = b.CheckInDate,
+                        CheckOutDate = b.CheckOutDate,
+                        TotalAmount = b.TotalAmount,
+                        CustomerId = b.CustomerId,
+                        RoomId = b.RoomId
+                    }).ToList()
+                })
                 .ToListAsync();
+
             return View(customers);
         }
-
         // GET: /Dashboard/Rooms - List all rooms (Admin only)
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Rooms()

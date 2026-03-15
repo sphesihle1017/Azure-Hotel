@@ -3,6 +3,11 @@
     ViewData["Title"] = "Manage Customers";
     Layout = "_Layout";
 }
+<style>
+    .footer{
+        visibility:hidden;
+    }
+</style>
 
 <div class="container mt-4">
     <h1 class="mb-4">Manage Customers</h1>
@@ -61,9 +66,7 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <button type="button" class="btn btn-sm btn-info" onclick="viewCustomer(@customer.CustomerId)" title="View Details">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
+                                           
                                             <button type="button" class="btn btn-sm btn-primary" onclick="editCustomer(@customer.CustomerId)" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </button>
