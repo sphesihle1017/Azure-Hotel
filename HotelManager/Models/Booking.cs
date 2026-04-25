@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 public class Booking
 {
@@ -18,7 +19,7 @@ public class Booking
     [Range(1, 1000000, ErrorMessage = "Total amount must be greater than 0.")]
     public decimal TotalAmount { get; set; }
 
-    [Required]
+    [NotMapped]
     public string BookingStatus  { get; set; }
 
     [Required]

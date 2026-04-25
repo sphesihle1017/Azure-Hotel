@@ -1,0 +1,30 @@
+﻿@model Booking
+@{
+    ViewData["Title"] = "Confirm Booking";
+}
+
+<h2>Confirm Your Booking</h2>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5>@ViewBag.RoomDescription at @ViewBag.HotelName</h5>
+        <p>Price per night: <strong>@ViewBag.PricePerNight</strong></p>
+        <p>Check-in: <strong>@Model.CheckInDate.ToString("yyyy-MM-dd")</strong></p>
+        <p>Check-out: <strong>@Model.CheckOutDate.ToString("yyyy-MM-dd")</strong></p>
+        <p>Total nights: <strong>@ViewBag.Nights</strong></p>
+        <h4>Total Amount: <strong>@Model.TotalAmount.ToString("C")</strong></h4>
+    </div>
+</div>
+
+<form asp-action="Book" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="RoomId" />
+    <input type="hidden" asp-for="CheckInDate" />
+    <input type="hidden" asp-for="CheckOutDate" />
+    <input type="hidden" asp-for="TotalAmount" />
+
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <button type="submit" class="btn btn-success btn-lg">Confirm Booking</button>
+    <a asp-action="Index" class="btn btn-secondary btn-lg">Cancel</a>
+</form>

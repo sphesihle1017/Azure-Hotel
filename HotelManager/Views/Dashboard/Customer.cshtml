@@ -2,34 +2,16 @@
     ViewData["Title"] = "Customer Dashboard";
     Layout = "_Layout";
 }
+<style>
+    .footer{
+        visibility:  hidden;
+    }
+</style>
 
 <div class="container mt-4">
     <h1 class="mb-4">Welcome to Your Dashboard</h1>
     
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Quick Actions</h4>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <a asp-action="AvailableRooms" class="btn btn-outline-primary btn-lg btn-block">
-                                <i class="bi bi-door-open"></i> Browse Available Rooms
-                            </a>
-                        </div>
-                        <div class="col-md-6">
-                            <a asp-action="MyBookings" class="btn btn-outline-secondary btn-lg btn-block">
-                                <i class="bi bi-clock-history"></i> View My Booking History
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    
     <div class="row mt-4">
         <!-- Available Rooms Section -->
         <div class="col-md-6">
@@ -39,7 +21,7 @@
                 </div>
                 <div class="card-body">
                     <p class="text-muted">Browse and book from our selection of available rooms.</p>
-                    <a asp-action="AvailableRooms" class="btn btn-success">View Available Rooms</a>
+                    <a asp-controller="AvailableRooms" asp-action="Index" class="btn btn-success">View Available Rooms</a>
                 </div>
             </div>
         </div>

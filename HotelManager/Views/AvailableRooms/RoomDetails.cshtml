@@ -1,0 +1,184 @@
+﻿@model Room
+@{
+    ViewData["Title"] = "Room Details";
+}
+<style>
+    footer {
+        display: none;
+    }
+
+    .booked-dates {
+        background: #ffe6e6;
+        border-radius: 5px;
+        padding: 10px;
+        margin-top: 15px;
+    }
+
+    .availability-result {
+        margin-top: 10px;
+        font-weight: bold;
+    }
+
+    .customer-section {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+</style>
+
+<h2>@Model.RoomDescription Room</h2>
+<p><strong>Hotel:</strong> @Model.Hotel.Name</p>
+<p><strong>Location:</strong> @Model.Hotel.Location</p>
+<p><strong>Price per night:</strong> @Model.PricePerNight.ToString("C")</p>
+
+<hr />
+
+<h4>Select Dates</h4>
+<div class="row">
+    <div class="col-md-4">
+        <label for="checkIn">Check-in date:</label>
+        <input type="date" id="checkIn" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="col-md-4">
+        <label for="checkOut">Check-out date:</label>
+        <input type="date" id="checkOut" class="form-control" min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="col-md-4 align-self-end">
+        <button id="checkAvailabilityBtn" class="btn btn-info">Check Availability</button>
+    </div>
+</div>
+
+<div id="availabilityResult" class="availability-result"></div>
+
+<!-- Customer information - always visible -->
+<div class="customer-section">
+    <h4>Your Information</h4>
+    <div class="mb-3">
+        <label for="firstName" class="form-label">First Name</label>
+        <input type="text" id="firstName" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label for="lastName" class="form-label">Last Name</label>
+        <input type="text" id="lastName" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" id="email" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label for="phoneNumber" class="form-label">Phone Number (10 digits, starts with 0)</label>
+        <input type="tel" id="phoneNumber" class="form-control" pattern="^0[0-9]{9}$" required />
+    </div>
+    <button id="bookNowBtn" class="btn btn-success">Confirm Booking</button>
+</div>
+
+<hr />
+<h5>Already booked dates for this room</h5>
+<div class="booked-dates">
+    @if (((System.Collections.IList)ViewBag.BookedDates).Count == 0)
+    {
+        <p>No existing bookings. This room is fully available for any future dates.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (var booking in ViewBag.BookedDates)
+            {
+                <li>From @booking.CheckInDate.ToString("yyyy-MM-dd") to @booking.CheckOutDate.ToString("yyyy-MM-dd")</li>
+            }
+        </ul>
+    }
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        const roomId = @Model.RoomId;
+        let currentAvailability = { available: false, checkIn: null, checkOut: null };
+
+        document.getElementById("checkAvailabilityBtn").addEventListener("click", async function() {
+            const checkIn = document.getElementById("checkIn").value;
+            const checkOut = document.getElementById("checkOut").value;
+            const resultDiv = document.getElementById("availabilityResult");
+
+            if (!checkIn || !checkOut) {
+                resultDiv.innerHTML = "<span class='text-danger'>Please select both dates.</span>";
+                currentAvailability.available = false;
+                return;
+            }
+
+            // Send dates with T00:00:00 to ensure proper DateTime binding
+            const response = await fetch("/AvailableRooms/CheckAvailability", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "RequestVerificationToken": document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: JSON.stringify({
+                    roomId: roomId,
+                    checkIn: checkIn + "T00:00:00",
+                    checkOut: checkOut + "T00:00:00"
+                })
+            });
+            const data = await response.json();
+
+            if (data.available) {
+                resultDiv.innerHTML = "<span class='text-success'>" + data.message + " Total: " + data.totalPrice + " for " + data.nights + " nights.</span>";
+                currentAvailability = { available: true, checkIn: checkIn, checkOut: checkOut };
+            } else {
+                resultDiv.innerHTML = "<span class='text-danger'>" + data.message + "</span>";
+                currentAvailability.available = false;
+            }
+        });
+
+        document.getElementById("bookNowBtn").addEventListener("click", async function() {
+            if (!currentAvailability.available) {
+                alert("Please select check-in and check-out dates and click 'Check Availability' first.");
+                return;
+            }
+
+            const firstName = document.getElementById("firstName").value.trim();
+            const lastName = document.getElementById("lastName").value.trim();
+            const email = document.getElementById("email").value.trim();
+            const phoneNumber = document.getElementById("phoneNumber").value.trim();
+
+            if (!firstName || !lastName || !email || !phoneNumber) {
+                alert("All customer fields are required.");
+                return;
+            }
+            if (!/^0[0-9]{9}$/.test(phoneNumber)) {
+                alert("Phone number must be 10 digits and start with 0.");
+                return;
+            }
+
+            const formData = new URLSearchParams();
+            formData.append("roomId", roomId);
+            // Add T00:00:00 to dates for proper binding
+            formData.append("checkIn", currentAvailability.checkIn + "T00:00:00");
+            formData.append("checkOut", currentAvailability.checkOut + "T00:00:00");
+            formData.append("firstName", firstName);
+            formData.append("lastName", lastName);
+            formData.append("email", email);
+            formData.append("phoneNumber", phoneNumber);
+
+            const response = await fetch("/AvailableRooms/BookRoom", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "RequestVerificationToken": document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: formData
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert("Error: " + data.message);
+            }
+        });
+    </script>
+}

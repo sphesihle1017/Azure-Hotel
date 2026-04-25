@@ -1,0 +1,41 @@
+﻿@model IEnumerable<Room>
+@{
+    ViewData["Title"] = "Available Rooms";
+}
+<style>
+    footer {
+        display: none;
+    }
+
+    .room-card {
+        margin-bottom: 20px;
+    }
+</style>
+
+<h2 class="mb-4">Available Rooms</h2>
+
+@if (!Model.Any())
+{
+    <p>No rooms available at the moment.</p>
+}
+else
+{
+    <div class="row">
+        @foreach (var room in Model)
+        {
+            <div class="col-md-4">
+                <div class="card room-card">
+                    <div class="card-body">
+                        <h5 class="card-title">@room.RoomDescription Room</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">@room.Hotel.Name</h6>
+                        <p class="card-text">
+                            Price per night: @room.PricePerNight.ToString("C")<br />
+                            Hotel location: @room.Hotel.Location
+                        </p>
+                        <a asp-action="RoomDetails" asp-route-id="@room.RoomId" class="btn btn-primary">View Details</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
