@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-
+namespace HotelManager.Models;
 public class Customer
 {
     [Key]

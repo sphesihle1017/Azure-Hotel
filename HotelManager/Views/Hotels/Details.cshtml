@@ -1,0 +1,69 @@
+﻿@model HotelManager.Models.Hotel
+
+@{
+    ViewData["Title"] = "Hotel Details";
+    Layout = "_Layout";
+}
+<style>
+    footer {
+        display: none !important;
+    }
+</style>
+<div class="container mt-4">
+
+    <div class="card shadow">
+
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">Hotel Details</h3>
+        </div>
+
+        <div class="card-body">
+
+            <dl class="row">
+
+                <dt class="col-sm-3">
+                    Hotel Name
+                </dt>
+
+                <dd class="col-sm-9">
+                    @Model.Name
+                </dd>
+
+                <dt class="col-sm-3">
+                    Location
+                </dt>
+
+                <dd class="col-sm-9">
+                    @Model.Location
+                </dd>
+
+                <dt class="col-sm-3">
+                    Rooms
+                </dt>
+
+                <dd class="col-sm-9">
+                    @(Model.Rooms?.Count ?? 0)
+                </dd>
+
+            </dl>
+
+        </div>
+
+        <div class="card-footer">
+
+            <a asp-action="Edit"
+               asp-route-id="@Model.HotelId"
+               class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Edit
+            </a>
+
+            <a asp-action="Index"
+               class="btn btn-secondary">
+                Back
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
