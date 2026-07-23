@@ -79,28 +79,62 @@ namespace HotelManager.Controllers
 
         // GET: /Dashboard/Admin - Admin dashboard for managing customers and rooms
         [Authorize(Roles = "Admin")]
+        //public async Task<IActionResult> Admin()
+        //{
+        //    // Get recent customers (last 10)
+        //    var recentCustomers = await _context.Customers
+        //        .OrderByDescending(c => c.CustomerId)
+        //        .Take(10)
+        //        .ToListAsync();
+
+        //    // Get recent rooms with hotel info
+        //    var recentRooms = await _context.Rooms
+        //        .Include(r => r.Hotel)
+        //        .OrderByDescending(r => r.RoomId)
+        //        .Take(10)
+        //        .ToListAsync();
+
+        //    // Pass data to view using ViewBag
+        //    ViewBag.RecentCustomers = recentCustomers;
+        //    ViewBag.RecentRooms = recentRooms;
+
+        //    return View();
+        //}
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Admin()
         {
-            // Get recent customers (last 10)
             var recentCustomers = await _context.Customers
                 .OrderByDescending(c => c.CustomerId)
                 .Take(10)
                 .ToListAsync();
 
-            // Get recent rooms with hotel info
             var recentRooms = await _context.Rooms
                 .Include(r => r.Hotel)
                 .OrderByDescending(r => r.RoomId)
                 .Take(10)
                 .ToListAsync();
 
-            // Pass data to view using ViewBag
+            var recentBookings = await _context.Bookings
+                .Include(b => b.Customer)
+                .Include(b => b.Room)
+                    .ThenInclude(r => r.Hotel)
+                .OrderByDescending(b => b.BookingId)
+                .Take(10)
+                .ToListAsync();
+
+            var recentHotels = await _context.Hotels
+                .Include(h => h.Rooms)
+                .OrderByDescending(h => h.HotelId)
+                .Take(10)
+                .ToListAsync();
+            
             ViewBag.RecentCustomers = recentCustomers;
             ViewBag.RecentRooms = recentRooms;
+            ViewBag.RecentBookings = recentBookings;
+            ViewBag.RecentHotels = recentHotels;
 
             return View();
         }
-
         // GET: /Dashboard/ManageCustomers - Manage customers (Admin only)
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ManageCustomers()
