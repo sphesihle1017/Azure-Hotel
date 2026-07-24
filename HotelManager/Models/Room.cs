@@ -16,6 +16,13 @@ public class Room
     [Range(1, 100000, ErrorMessage = "Price must be greater than 0.")]
     public decimal PricePerNight { get; set; }
 
+
+    /*[Required(ErrorMessage = "Please enter the quantity of rooms.")]*/
+    /*public int Qty { get; set; } */
+
+    /*[Required(ErrorMessage = "Please enter the Room Number.")]*/
+    /*public int RoomNumber { get; set; } */
+
     [Required]
     public int HotelId { get; set; }
 
