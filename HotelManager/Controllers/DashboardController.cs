@@ -38,8 +38,20 @@ namespace HotelManager.Controllers
                 .ToListAsync();
             return View(availableRooms);
         }
+        [Authorize(Roles = "User")]
+        //public async Task<IActionResult> Customer()
+        //{
+        //    var rooms = await _context.Rooms
+        //        .Include(r => r.Hotel)
+        //        .Where(r => r.Quantity > 0)
+        //        .OrderBy(r => r.Hotel.Name)
+        //        .ThenBy(r => r.RoomDescription)
+        //        .ToListAsync();
 
-        // GET: /Dashboard/AvailableRooms - Shows available rooms for customers
+        //    return View(rooms);
+        //}
+
+ 
         [Authorize(Roles = "User")]
         public async Task<IActionResult> AvailableRooms()
         {
