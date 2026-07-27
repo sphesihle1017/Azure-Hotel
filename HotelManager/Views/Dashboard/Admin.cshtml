@@ -13,34 +13,50 @@
 <div class="container mt-4">
     <h1 class="mb-4">Admin Dashboard</h1>
 
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Admin Options</h4>
-                </div>
+    <div class="row mb-4">
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow bg-info text-white">
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <a asp-action="ManageCustomers" class="btn btn-outline-primary btn-lg btn-block w-100 mb-2">
-                                <i class="bi bi-people"></i> Manage Customers
-                            </a>
-                        </div>
-                        <div class="col-md-4">
-                            <a asp-action="Rooms" class="btn btn-outline-success btn-lg btn-block w-100 mb-2">
-                                <i class="bi bi-door-open"></i> Manage Rooms
-                            </a>
-                        </div>
-                        <div class="col-md-4">
-                            <a asp-action="CreateRoom" class="btn btn-outline-warning btn-lg btn-block w-100 mb-2">
-                                <i class="bi bi-plus-circle"></i> Create New Room
-                            </a>
-                        </div>
-                    </div>
+                    <h6>Total Customers</h6>
+                    <h2>@ViewBag.TotalCustomers</h2>
+                    <i class="bi bi-people-fill fs-2"></i>
                 </div>
             </div>
         </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow bg-success text-white">
+                <div class="card-body">
+                    <h6>Total Hotels</h6>
+                    <h2>@ViewBag.TotalHotels</h2>
+                    <i class="bi bi-building fs-2"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow bg-warning text-dark">
+                <div class="card-body">
+                    <h6>Total Rooms</h6>
+                    <h2>@ViewBag.TotalRooms</h2>
+                    <i class="bi bi-door-open-fill fs-2"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow bg-danger text-white">
+                <div class="card-body">
+                    <h6>Total Bookings</h6>
+                    <h2>@ViewBag.TotalBookings</h2>
+                    <i class="bi bi-calendar-check fs-2"></i>
+                </div>
+            </div>
+        </div>
+
     </div>
+
 
     <!-- Display Success/Error Messages -->
     @if (TempData["Success"] != null)
@@ -57,6 +73,34 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
+   
+    <form asp-action="ManageCustomers" method="get" class="mb-3">
+        <div class="input-group">
+
+            <input type="text"
+                   name="searchString"
+                   class="form-control"
+                   placeholder="Search by name, email or phone..."
+                   value="@ViewBag.SearchString" />
+
+            <button type="submit" class="btn btn-primary">
+                Search
+            </button>
+
+
+        </div>
+
+
+        @if (!string.IsNullOrWhiteSpace(ViewBag.SearchString))
+        {
+            <p>
+                Showing <strong>@Model.Count()</strong> result(s) for
+                "<strong>@ViewBag.SearchString</strong>"
+            </p>
+        }
+    </form>
+
+
 
     <!-- Tab Navigation -->
     <ul class="nav nav-tabs" id="adminTab" role="tablist">
@@ -71,6 +115,7 @@
                     role="tab">
                 <i class="bi bi-door-open"></i> Recent Rooms
             </button>
+
             <li class="nav-item">
                 <button class="nav-link"
                         id="hotels-tab"
@@ -82,6 +127,7 @@
                 </button>
             </li>
         </li>
+        
     </ul>
 
     <!-- Tab Content -->
@@ -106,7 +152,6 @@
                                     <th>Email</th>
                                     <th>Phone</th>
                                     <th>Total Bookings</th>
-                                    @* <th>Hotel</th> *@
                                     <th>Actions</th>
 
                                 </tr>
@@ -120,10 +165,10 @@
                                             <td>@customer.FirstName @customer.LastName</td>
                                             <td>@customer.Email</td>
                                             <td>@customer.PhoneNumber</td>
-                                            @* Here *@
                                             <td>
-                                                <span class="badge bg-info">@(customer.Bookings.Count)</span>
+                                                <span class="badge bg-info">  @(customer.Bookings.Count)</span>
                                             </td>
+                                           
                                             <td>
                                                 <a asp-action="CustomerDetails" asp-route-id="@customer.CustomerId"
                                                    class="btn btn-sm btn-info" title="View Details">
@@ -193,6 +238,7 @@
                                             <td>
                                                 <span class="badge bg-info">@(room.Bookings?.Count ?? 0)</span>
                                             </td>
+
                                             <td>
                                                 <a asp-action="EditRoom" asp-route-id="@room.RoomId"
                                                    class="btn btn-sm btn-warning" title="Edit">
@@ -262,7 +308,7 @@
                             <tr>
                                 <th>Hotel Name</th>
                                 <th>Location</th>
-                                <th>Total Types of Rooms</th>
+                                <th> Types of Rooms</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -337,9 +383,12 @@
                         </tbody>
 
                     </table>
+
                 </div>
 
             </div>
 
         </div>
+
     </div>
+ </div>

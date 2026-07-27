@@ -67,9 +67,13 @@
                                     <td>
                                         <div class="btn-group" role="group">
                                            
-                                            <button type="button" class="btn btn-sm btn-primary" onclick="editCustomer(@customer.CustomerId)" title="Edit">
+                                           <a asp-action="CustomerDetails"
+                                               asp-controller="Dashboard"
+                                               asp-route-id="@customer.CustomerId"
+                                               class="btn btn-sm btn-primary"
+                                               title="View">
                                                 <i class="fas fa-edit"></i>
-                                            </button>
+                                            </a>
                                             <button type="button" class="btn btn-sm btn-danger" onclick="confirmDelete(@customer.CustomerId, '@customer.FirstName @customer.LastName')" title="Delete">
                                                 <i class="fas fa-trash"></i>
                                             </button>

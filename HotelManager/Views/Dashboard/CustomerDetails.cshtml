@@ -1,0 +1,104 @@
+﻿@model HotelManager.Models.Customer
+
+@{
+    ViewData["Title"] = "Customer Details";
+}
+<style>
+    footer{
+        visibility: hidden;
+    }
+    .card-header {
+        color:beige;
+    }
+</style>
+
+<h2 class="mb-4">Customer Details</h2>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h4>@Model.FirstName @Model.LastName</h4>
+    </div>
+
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Customer Name</dt>
+            <dd class="col-sm-9"> @Model.LastName @Model.FirstName </dd>
+
+            <dt class="col-sm-3">Email</dt>
+            <dd class="col-sm-9">@Model.Email</dd>
+
+            <dt class="col-sm-3">Phone Number</dt>
+            <dd class="col-sm-9">@Model.PhoneNumber</dd>
+        </dl>
+    </div>
+</div>
+
+<h3>Bookings</h3>
+
+@if (Model.Bookings != null && Model.Bookings.Any())
+{
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Booking ID</th>
+                <th>Hotel</th>
+                <th>Room</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Total Amount</th>
+                <th>Room Qty</th>
+                <th>Booked</th>
+                <th>Available</th>
+              
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var booking in Model.Bookings)
+            {
+                <tr>
+                    <td>@booking.BookingId</td>
+
+                    <td>
+                        @(booking.Room?.Hotel?.Name ?? "N/A")
+                    </td>
+
+                    <td>
+                        @(booking.Room?.RoomDescription ?? "N/A")
+                    </td>
+
+                    <td>
+                        @booking.CheckInDate.ToShortDateString()
+                    </td>
+
+                    <td>
+                        @booking.CheckOutDate.ToShortDateString()
+                    </td>
+
+                    <td>
+                        @booking.TotalAmount.ToString("C")
+                    </td>
+
+                    <td>@booking.Room.Quantity</td>
+
+                    <td>@booking.Room.Bookings.Count</td>
+
+                    <td>@(booking.Room.Quantity - booking.Room.Bookings.Count)</td>
+                    
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-info">
+        This customer has no bookings.
+    </div>
+}
+
+<div class="mt-3">
+    <a asp-action="Index" class="btn btn-secondary">
+        Back to Customers
+    </a>
+</div>

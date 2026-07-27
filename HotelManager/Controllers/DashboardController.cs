@@ -132,35 +132,34 @@ namespace HotelManager.Controllers
             ViewBag.RecentRooms = recentRooms;
             ViewBag.RecentBookings = recentBookings;
             ViewBag.RecentHotels = recentHotels;
+            ViewBag.TotalCustomers = await _context.Customers.CountAsync();
+            ViewBag.TotalHotels = await _context.Hotels.CountAsync();
+            ViewBag.TotalRooms = await _context.Rooms.SumAsync(r => r.Quantity);
+            ViewBag.TotalBookings = await _context.Bookings.CountAsync();
 
             return View();
         }
         // GET: /Dashboard/ManageCustomers - Manage customers (Admin only)
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> ManageCustomers()
-        {
-            // Select only the properties you need
-            var customers = await _context.Customers
-                .Select(c => new Customer
-                {
-                    CustomerId = c.CustomerId,
-                    FirstName = c.FirstName,
-                    LastName = c.LastName,
-                    Email = c.Email,
-                    PhoneNumber = c.PhoneNumber,
-                    Bookings = c.Bookings.Select(b => new Booking
-                    {
-                        BookingId = b.BookingId,
-                        CheckInDate = b.CheckInDate,
-                        CheckOutDate = b.CheckOutDate,
-                        TotalAmount = b.TotalAmount,
-                        CustomerId = b.CustomerId,
-                        RoomId = b.RoomId
-                    }).ToList()
-                })
-                .ToListAsync();
 
-            return View(customers);
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ManageCustomers(string searchString)
+        {
+            var customers = _context.Customers
+                .Include(c => c.Bookings)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchString))
+            {
+                customers = customers.Where(c =>
+                    c.FirstName.Contains(searchString) ||
+                    c.LastName.Contains(searchString) ||
+                    c.Email.Contains(searchString) ||
+                    c.PhoneNumber.Contains(searchString));
+            }
+
+            ViewBag.SearchString = searchString;
+
+            return View(await customers.ToListAsync());
         }
         // GET: /Dashboard/Rooms - List all rooms (Admin only)
         [Authorize(Roles = "Admin")]
@@ -168,6 +167,7 @@ namespace HotelManager.Controllers
         {
             var rooms = await _context.Rooms
                 .Include(r => r.Hotel)
+                .Include(r => r.Bookings)
                 .OrderBy(r => r.Hotel.Name)
                 .ThenBy(r => r.RoomDescription)
                 .ToListAsync();
@@ -190,6 +190,10 @@ namespace HotelManager.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateRoom(Room room)
         {
+            if (room.Quantity <= 0)
+            {
+                ModelState.AddModelError("Quantity", "Quantity must be greater than zero.");
+            }
             try
             {
                 // Log the incoming data for debugging
@@ -236,7 +240,9 @@ namespace HotelManager.Controllers
                     TempData["Success"] = $"Room created successfully!";
                     return RedirectToAction(nameof(Rooms));
                 }
+
             }
+
             catch (DbUpdateException ex)
             {
                 var innerMessage = ex.InnerException?.Message ?? ex.Message;
@@ -278,7 +284,7 @@ namespace HotelManager.Controllers
             {
                 return NotFound();
             }
-
+           
             try
             {
                 // Remove navigation properties from ModelState validation
@@ -332,8 +338,10 @@ namespace HotelManager.Controllers
                         RoomId = id,
                         HotelId = room.HotelId,
                         RoomDescription = room.RoomDescription,
-                        PricePerNight = room.PricePerNight
+                        PricePerNight = room.PricePerNight,
+                        Quantity = room.Quantity
                     };
+                 
 
                     _context.Update(existingRoom);
                     await _context.SaveChangesAsync();
@@ -362,6 +370,7 @@ namespace HotelManager.Controllers
             ViewBag.Hotels = await _context.Hotels.ToListAsync();
             return View(room);
         }
+       
 
         // POST: /Dashboard/DeleteRoom/{id} - Delete room (Admin only)
         [HttpPost]
@@ -385,6 +394,48 @@ namespace HotelManager.Controllers
                 TempData["Success"] = "Room deleted successfully!";
             }
             return RedirectToAction(nameof(Rooms));
+        }
+        // GET: /Dashboard/CustomerDetails/5
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CustomerDetails(int id)
+        {
+
+
+            var customer = await _context.Customers
+    .Include(c => c.Bookings)
+        .ThenInclude(b => b.Room)
+            .ThenInclude(r => r.Hotel)
+    .Include(c => c.Bookings)
+        .ThenInclude(b => b.Room)
+            .ThenInclude(r => r.Bookings)
+    .FirstOrDefaultAsync(c => c.CustomerId == id);
+
+            if (customer == null)
+            {
+                return NotFound();
+            }
+
+            return View(customer);
+        }
+        // GET: /Dashboard/RoomDetails/5
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> RoomDetails(int id)
+        {
+            var room = await _context.Rooms
+                .Include(r => r.Hotel)
+                .Include(r => r.Bookings)
+                    .ThenInclude(b => b.Customer)
+                .FirstOrDefaultAsync(r => r.RoomId == id);
+
+            if (room == null)
+            {
+                return NotFound();
+            }
+
+            ViewBag.BookedRooms = room.Bookings.Count;
+            ViewBag.AvailableRooms = room.Quantity - room.Bookings.Count;
+
+            return View(room);
         }
 
         // POST: /Dashboard/DeleteCustomer/{id} - Delete customer (Admin only)

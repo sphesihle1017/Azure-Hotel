@@ -31,4 +31,6 @@ public class Booking
 
     public virtual Customer Customer { get; set; }
     public virtual Room Room { get; set; }
+    
+    
 }

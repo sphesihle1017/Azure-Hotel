@@ -11,6 +11,7 @@ public class Hotel
     [RegularExpression(@"^[a-zA-Z0-9\s]+$", ErrorMessage = "Hotel name can only contain letters, numbers and spaces.")]
     public string Name { get; set; }
 
+    //add qty here
     [Required(ErrorMessage = "Location is required.")]
     [StringLength(150)]
     public string Location { get; set; }

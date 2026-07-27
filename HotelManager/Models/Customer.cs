@@ -26,4 +26,5 @@ public class Customer
     public string PhoneNumber { get; set; }
 
     public virtual ICollection<Booking> Bookings { get; set; }
+    
 }

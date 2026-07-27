@@ -37,9 +37,10 @@
                             <th>Hotel</th>
                             <th>Room Type</th>
                             <th>Price/Night</th>
-                            <th>Total Bookings</th>
-@*                             still to add the qty of rooms available for each hotel
- *@                            <th>Actions</th>
+                            <th>Quantity</th>
+                            <th>Booked</th>
+                            <th>Available</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -51,9 +52,28 @@
                                 <td>R @room.PricePerNight.ToString("N2")</td>
 
                                 <td>
-                                    <span class="badge bg-info">@(room.Bookings?.Count ?? 0)</span>
+                                    <span class="badge bg-secondary">
+                                        @room.Quantity
+                                    </span>
                                 </td>
+
                                 <td>
+                                    <span class="badge bg-danger">
+                                        @(room.Bookings?.Count ?? 0)
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-success">
+                                        @(room.Quantity - (room.Bookings?.Count ?? 0))
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <a asp-action="RoomDetails" asp-route-id="@room.RoomId"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-book"></i> Details
+                                    </a>
                                     <a asp-action="EditRoom" asp-route-id="@room.RoomId"
                                        class="btn btn-sm btn-warning">
                                         <i class="bi bi-pencil"></i> Edit

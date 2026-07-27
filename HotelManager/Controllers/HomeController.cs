@@ -2,7 +2,6 @@ using HotelManager.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
-using HotelManager.Models;
 
 namespace UserRoles.Controllers
 {
