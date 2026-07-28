@@ -4,11 +4,25 @@
     ViewData["Title"] = "Book Room";
     Layout = "_Layout";
 }
+
 <style>
-    footer{
+    footer {
         visibility: hidden;
     }
+
+    .room-card,
+    .booking-card {
+        border-radius: 15px;
+    }
+
+    .summary-box {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        border: 1px solid #dee2e6;
+    }
 </style>
+
 <div class="container mt-5">
 
     <div class="row">
@@ -17,10 +31,14 @@
 
         <div class="col-lg-4">
 
-            <div class="card shadow">
+            <div class="card room-card shadow">
 
                 <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Room Details</h4>
+
+                    <h4 class="mb-0">
+                        Room Details
+                    </h4>
+
                 </div>
 
                 <div class="card-body">
@@ -41,13 +59,15 @@
 
                     <p>
                         <strong>Price Per Night</strong><br />
-                        R @Model.PricePerNight.ToString("N2")
+                        <span class="text-success fw-bold">
+                            R @Model.PricePerNight.ToString("N2")
+                        </span>
                     </p>
 
                     <hr />
 
                     <p>
-                        <strong>Total Rooms</strong><br />
+                        <strong>Total Rooms Available</strong><br />
                         @Model.Quantity
                     </p>
 
@@ -57,14 +77,18 @@
 
         </div>
 
-        <!-- ================= BOOKING FORM ================= -->
+        <!-- ================= BOOKING ================= -->
 
         <div class="col-lg-8">
 
-            <div class="card shadow">
+            <div class="card booking-card shadow">
 
                 <div class="card-header bg-success text-white">
-                    <h4 class="mb-0">Book This Room</h4>
+
+                    <h4 class="mb-0">
+                        Booking Information
+                    </h4>
+
                 </div>
 
                 <div class="card-body">
@@ -76,16 +100,22 @@
                         <input asp-for="RoomId" type="hidden" />
 
                         <div asp-validation-summary="ModelOnly"
-                             class="text-danger mb-3">
+                             class="alert alert-danger">
                         </div>
 
-                        <h5 class="mb-3">Guest Information</h5>
+                        <!-- ================= Guest ================= -->
+
+                        <h5 class="mb-3">
+                            Guest Information
+                        </h5>
 
                         <div class="row">
 
                             <div class="col-md-6 mb-3">
 
-                                <label asp-for="FirstName"></label>
+                                <label asp-for="FirstName"
+                                       class="form-label">
+                                </label>
 
                                 <input asp-for="FirstName"
                                        class="form-control" />
@@ -97,7 +127,9 @@
 
                             <div class="col-md-6 mb-3">
 
-                                <label asp-for="LastName"></label>
+                                <label asp-for="LastName"
+                                       class="form-label">
+                                </label>
 
                                 <input asp-for="LastName"
                                        class="form-control" />
@@ -113,7 +145,9 @@
 
                             <div class="col-md-6 mb-3">
 
-                                <label asp-for="Email"></label>
+                                <label asp-for="Email"
+                                       class="form-label">
+                                </label>
 
                                 <input asp-for="Email"
                                        class="form-control" />
@@ -125,7 +159,9 @@
 
                             <div class="col-md-6 mb-3">
 
-                                <label asp-for="PhoneNumber"></label>
+                                <label asp-for="PhoneNumber"
+                                       class="form-label">
+                                </label>
 
                                 <input asp-for="PhoneNumber"
                                        class="form-control" />
@@ -139,27 +175,41 @@
 
                         <hr />
 
-                        <h5 class="mb-3">Booking Dates</h5>
+                        <!-- ================= Dates ================= -->
+
+                        <h5 class="mb-3">
+                            Booking Dates
+                        </h5>
 
                         <div class="row">
 
                             <div class="col-md-6 mb-3">
 
-                                <label asp-for="CheckInDate"></label>
+                                <label asp-for="CheckInDate"
+                                       class="form-label">
+                                </label>
 
                                 <input asp-for="CheckInDate"
                                        type="date"
                                        class="form-control" />
 
+                                <span asp-validation-for="CheckInDate"
+                                      class="text-danger"></span>
+
                             </div>
 
                             <div class="col-md-6 mb-3">
 
-                                <label asp-for="CheckOutDate"></label>
+                                <label asp-for="CheckOutDate"
+                                       class="form-label">
+                                </label>
 
                                 <input asp-for="CheckOutDate"
                                        type="date"
                                        class="form-control" />
+
+                                <span asp-validation-for="CheckOutDate"
+                                      class="text-danger"></span>
 
                             </div>
 
@@ -167,38 +217,43 @@
 
                         <hr />
 
-                        <div class="alert alert-light border">
+                        <!-- ================= Summary ================= -->
+
+                        <div class="summary-box mb-4">
 
                             <div class="row text-center">
 
                                 <div class="col-md-4">
 
-                                    <strong>Nights</strong>
+                                    <h6>Nights</h6>
 
-                                    <h5 id="nights">0</h5>
+                                    <h3 id="nights">0</h3>
 
                                 </div>
 
                                 <div class="col-md-4">
 
-                                    <strong>Total Price</strong>
+                                    <h6>Total Price</h6>
 
-                                    <h5 id="totalPrice">
+                                    <h3 class="text-success"
+                                        id="totalPrice">
+
                                         R 0.00
-                                    </h5>
+
+                                    </h3>
 
                                 </div>
 
                                 <div class="col-md-4">
 
-                                    <strong>Status</strong>
+                                    <h6>Status</h6>
 
-                                    <h6 id="availabilityMessage"
-                                        class="text-muted">
+                                    <span id="availabilityMessage"
+                                          class="badge bg-secondary">
 
                                         Select dates
 
-                                    </h6>
+                                    </span>
 
                                 </div>
 
@@ -229,6 +284,14 @@
 
                             </button>
 
+                            <a asp-controller="Dashboard"
+                               asp-action="Customer"
+                               class="btn btn-secondary">
+
+                                Cancel
+
+                            </a>
+
                         </div>
 
                     </form>
@@ -243,102 +306,100 @@
 
 </div>
 
-@section Scripts {
+@section Scripts{
 
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 
-    <script>
+<script>
 
-        $(function() {
+$(document).ready(function () {
 
-            // Disable booking when dates change
-            $("#CheckInDate,#CheckOutDate").change(function() {
+    $("#CheckInDate,#CheckOutDate").change(function () {
+
+        $("#btnConfirmBooking").prop("disabled", true);
+
+        $("#availabilityMessage")
+            .removeClass()
+            .addClass("badge bg-secondary")
+            .text("Select dates");
+
+        $("#nights").text("0");
+
+        $("#totalPrice").text("R 0.00");
+
+    });
+
+
+    $("#btnCheckAvailability").click(function () {
+
+        $.ajax({
+
+            url: '@Url.Action("CheckAvailability","Bookings")',
+
+            type: 'POST',
+
+            data: {
+
+                roomId: $("#RoomId").val(),
+
+                checkInDate: $("#CheckInDate").val(),
+
+                checkOutDate: $("#CheckOutDate").val()
+
+            },
+
+            success: function (result) {
+
+                if (result.success) {
+
+                    $("#availabilityMessage")
+                        .removeClass()
+                        .addClass("badge bg-success")
+                        .text(result.message);
+
+                    $("#nights").text(result.nights);
+
+                    $("#totalPrice").text("R " + result.total.toFixed(2));
+
+                    $("#btnConfirmBooking").prop("disabled", false);
+
+                }
+                else {
+
+                    $("#availabilityMessage")
+                        .removeClass()
+                        .addClass("badge bg-danger")
+                        .text(result.message);
+
+                    $("#nights").text("0");
+
+                    $("#totalPrice").text("R 0.00");
+
+                    $("#btnConfirmBooking").prop("disabled", true);
+
+                }
+
+            },
+
+            error: function () {
+
+                $("#availabilityMessage")
+                    .removeClass()
+                    .addClass("badge bg-danger")
+                    .text("An unexpected error occurred.");
 
                 $("#btnConfirmBooking").prop("disabled", true);
 
-                $("#availabilityMessage")
-                    .removeClass("text-success text-danger")
-                    .addClass("text-muted")
-                    .text("Please check availability.");
-
-                $("#nights").text("0");
-
-                $("#totalPrice").text("R 0.00");
-
-            });
-
-            // Check availability
-
-            $("#btnCheckAvailability").click(function() {
-
-                $.ajax({
-
-                    url: '@Url.Action("CheckAvailability", "Bookings")',
-
-                    type: 'POST',
-
-                    data: {
-                        roomId: $("#RoomId").val(),
-                        checkInDate: $("#CheckInDate").val(),
-                        checkOutDate: $("#CheckOutDate").val()
-                    },
-
-                    success: function(result) {
-
-                        if (result.success) {
-
-                            $("#availabilityMessage")
-                                .removeClass("text-danger text-muted")
-                                .addClass("text-success")
-                                .text(result.message);
-
-                            $("#nights").text(result.nights);
-
-                            $("#totalPrice")
-                                .text("R " + result.total.toFixed(2));
-
-                            $("#btnConfirmBooking")
-                                .prop("disabled", false);
-
-                        }
-                        else {
-
-                            $("#availabilityMessage")
-                                .removeClass("text-success text-muted")
-                                .addClass("text-danger")
-                                .text(result.message);
-
-                            $("#nights").text("0");
-
-                            $("#totalPrice").text("R 0.00");
-
-                            $("#btnConfirmBooking")
-                                .prop("disabled", true);
-
-                        }
-
-                    },
-
-                    error: function() {
-
-                        $("#availabilityMessage")
-                            .removeClass("text-success text-muted")
-                            .addClass("text-danger")
-                            .text("An unexpected error occurred.");
-
-                        $("#btnConfirmBooking")
-                            .prop("disabled", true);
-
-                    }
-
-                });
-
-            });
+            }
 
         });
 
-    </script>
+    });
+
+});
+
+</script>
 
 }

@@ -25,6 +25,8 @@ public class Customer
         ErrorMessage = "Phone number must be 10 digits and start with 0.")]
     public string PhoneNumber { get; set; }
 
+    public bool IsActive { get; set; } = true;
+
     public virtual ICollection<Booking> Bookings { get; set; }
     
 }

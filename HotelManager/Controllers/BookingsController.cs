@@ -4,24 +4,19 @@ using HotelManager.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
 
 namespace HotelManager.Controllers
 {
-   
     [Authorize(Roles = "User")]
     public class BookingsController : Controller
     {
-
         private readonly AppDbContext _context;
-        private readonly UserManager<Users> _userManager;
-        public BookingsController(
-    AppDbContext context,
-    UserManager<Users> userManager)
+
+        public BookingsController(AppDbContext context)
         {
             _context = context;
-            _userManager = userManager;
         }
+
 
 
         public async Task<IActionResult> Create(int roomId)
@@ -31,97 +26,125 @@ namespace HotelManager.Controllers
                 .FirstOrDefaultAsync(r => r.RoomId == roomId);
 
             if (room == null)
-            {
                 return NotFound();
-            }
 
-            var model = new BookingViewModel
+            BookingViewModel model = new BookingViewModel
             {
                 RoomId = room.RoomId,
                 HotelName = room.Hotel.Name,
                 RoomDescription = room.RoomDescription,
                 PricePerNight = room.PricePerNight,
                 Quantity = room.Quantity,
-
                 CheckInDate = DateTime.Today,
                 CheckOutDate = DateTime.Today.AddDays(1)
             };
 
-            // Get logged in user
-            var user = await _userManager.GetUserAsync(User);
-
-
-            if (user != null)
-            {
-                var customer = await _context.Customers
-                .FirstOrDefaultAsync(c => c.Email == model.Email);
-
-                if (customer != null)
-                {
-                    model.FirstName = customer.FirstName;
-                    model.LastName = customer.LastName;
-                    model.Email = customer.Email;
-                    model.PhoneNumber = customer.PhoneNumber;
-                }
-            }
-
             return View(model);
         }
+
+        //====================================================
+        // POST: Bookings/Create
+        //====================================================
+        // POST: Bookings/Create
+        //====================================================
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(BookingViewModel model)
         {
-            // Reload room information if validation fails
-            var room = await _context.Rooms
-                .Include(r => r.Hotel)
-                .FirstOrDefaultAsync(r => r.RoomId == model.RoomId);
-
-            if (room == null)
+            try
             {
-                return NotFound();
-            }
+                Console.WriteLine("====================================");
+                Console.WriteLine("BOOKING REQUEST RECEIVED");
+                Console.WriteLine($"First Name : {model.FirstName}");
+                Console.WriteLine($"Last Name  : {model.LastName}");
+                Console.WriteLine($"Email      : {model.Email}");
+                Console.WriteLine($"Phone      : {model.PhoneNumber}");
+                Console.WriteLine("====================================");
 
-            model.HotelName = room.Hotel.Name;
-            model.RoomDescription = room.RoomDescription;
-            model.PricePerNight = room.PricePerNight;
-            model.Quantity = room.Quantity;
+                //-------------------------------------------------
+                // Get Room
+                //-------------------------------------------------
 
-            // Validate dates
-            if (model.CheckInDate < DateTime.Today)
-            {
-                ModelState.AddModelError("CheckInDate", "Check-in date cannot be in the past.");
-            }
+                var room = await _context.Rooms
+                    .Include(r => r.Hotel)
+                    .FirstOrDefaultAsync(r => r.RoomId == model.RoomId);
 
-            if (model.CheckOutDate <= model.CheckInDate)
-            {
-                ModelState.AddModelError("CheckOutDate", "Check-out date must be after check-in.");
-            }
+                if (room == null)
+                {
+                    Console.WriteLine("Room not found.");
+                    return NotFound();
+                }
 
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
+                model.HotelName = room.Hotel.Name;
+                model.RoomDescription = room.RoomDescription;
+                model.PricePerNight = room.PricePerNight;
+                model.Quantity = room.Quantity;
 
-            // Check room availability
-            int bookedRooms = await _context.Bookings.CountAsync(b =>
-                b.RoomId == model.RoomId &&
-                model.CheckInDate < b.CheckOutDate &&
-                model.CheckOutDate > b.CheckInDate);
+                //-------------------------------------------------
+                // Validate Model
+                //-------------------------------------------------
 
-            if (bookedRooms >= room.Quantity)
-            {
-                ModelState.AddModelError("", "No rooms are available for the selected dates.");
-                return View(model);
-            }
+                if (!ModelState.IsValid)
+                {
+                    Console.WriteLine("ModelState Invalid");
 
-            // Check if customer already exists
-            var customer = await _context.Customers
-                .FirstOrDefaultAsync(c => c.Email == model.Email);
+                    foreach (var error in ModelState)
+                    {
+                        foreach (var e in error.Value.Errors)
+                        {
+                            Console.WriteLine($"{error.Key} : {e.ErrorMessage}");
+                        }
+                    }
 
-            if (customer == null)
-            {
-                customer = new Customer
+                    return View(model);
+                }
+
+                //-------------------------------------------------
+                // Validate Dates
+                //-------------------------------------------------
+
+                if (model.CheckInDate < DateTime.Today)
+                {
+                    ModelState.AddModelError("", "Check-in date cannot be before today.");
+                    return View(model);
+                }
+
+                if (model.CheckOutDate <= model.CheckInDate)
+                {
+                    ModelState.AddModelError("", "Check-out date must be after check-in.");
+                    return View(model);
+                }
+
+                //-------------------------------------------------
+                // Check Availability
+                //-------------------------------------------------
+
+                Console.WriteLine("Checking availability...");
+
+                int bookedRooms = await _context.Bookings.CountAsync(b =>
+                    b.RoomId == room.RoomId &&
+                    model.CheckInDate < b.CheckOutDate &&
+                    model.CheckOutDate > b.CheckInDate);
+
+                if (bookedRooms >= room.Quantity)
+                {
+                    Console.WriteLine("Room unavailable.");
+
+                    ModelState.AddModelError("", "No rooms available.");
+
+                    return View(model);
+                }
+
+                Console.WriteLine("Room Available");
+
+                //-------------------------------------------------
+                // Create Customer
+                //-------------------------------------------------
+
+                Console.WriteLine("Creating Customer...");
+
+                Customer customer = new Customer
                 {
                     FirstName = model.FirstName,
                     LastName = model.LastName,
@@ -130,37 +153,96 @@ namespace HotelManager.Controllers
                 };
 
                 _context.Customers.Add(customer);
+
+                Console.WriteLine("Saving Customer...");
+
                 await _context.SaveChangesAsync();
+
+                Console.WriteLine($"Customer Saved Successfully.");
+                Console.WriteLine($"CustomerId = {customer.CustomerId}");
+
+                //-------------------------------------------------
+                // Create Booking
+                //-------------------------------------------------
+
+                int nights = (model.CheckOutDate - model.CheckInDate).Days;
+
+                decimal total = nights * room.PricePerNight;
+
+                Booking booking = new Booking
+                {
+                    CustomerId = customer.CustomerId,
+                    RoomId = room.RoomId,
+                    CheckInDate = model.CheckInDate,
+                    CheckOutDate = model.CheckOutDate,
+                    TotalAmount = total
+                };
+
+                Console.WriteLine("Creating Booking...");
+
+                _context.Bookings.Add(booking);
+
+                Console.WriteLine("Saving Booking...");
+
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine("Booking Saved Successfully");
+
+                TempData["Success"] = "Booking created successfully.";
+
+                return RedirectToAction(nameof(Receipt), new
+                {
+                    id = booking.BookingId
+                });
             }
-
-            // Calculate booking cost
-            int nights = (model.CheckOutDate - model.CheckInDate).Days;
-
-            decimal total = nights * room.PricePerNight;
-
-            // Create booking
-            Booking booking = new Booking
+            catch (DbUpdateException ex)
             {
-                CustomerId = customer.CustomerId,
-                RoomId = room.RoomId,
-                CheckInDate = model.CheckInDate,
-                CheckOutDate = model.CheckOutDate,
-                TotalAmount = total
-            };
+                Console.WriteLine("========== DbUpdateException ==========");
+                Console.WriteLine(ex.Message);
 
-            _context.Bookings.Add(booking);
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine("INNER EXCEPTION:");
+                    Console.WriteLine(ex.InnerException.Message);
+                }
 
-            await _context.SaveChangesAsync();
+                ModelState.AddModelError("", ex.InnerException?.Message ?? ex.Message);
 
-            TempData["Success"] = "Your booking has been confirmed.";
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("========== GENERAL EXCEPTION ==========");
+                Console.WriteLine(ex.ToString());
 
-            return RedirectToAction("MyBookings", "Dashboard");
+                ModelState.AddModelError("", ex.Message);
+
+                return View(model);
+            }
         }
+        public async Task<IActionResult> Receipt(int id)
+        {
+            var booking = await _context.Bookings
+                .Include(b => b.Customer)
+                .Include(b => b.Room)
+                    .ThenInclude(r => r.Hotel)
+                .FirstOrDefaultAsync(b => b.BookingId == id);
+
+            if (booking == null)
+                return NotFound();
+
+            return View(booking);
+        }
+
+        //====================================================
+        // AJAX: Check Availability
+        //====================================================
+
         [HttpPost]
         public async Task<IActionResult> CheckAvailability(
-        int roomId,
-        DateTime checkInDate,
-        DateTime checkOutDate)
+            int roomId,
+            DateTime checkInDate,
+            DateTime checkOutDate)
         {
             if (checkInDate < DateTime.Today)
             {
@@ -176,7 +258,7 @@ namespace HotelManager.Controllers
                 return Json(new
                 {
                     success = false,
-                    message = "Check-out must be after check-in."
+                    message = "Check-out date must be after check-in."
                 });
             }
 
@@ -214,70 +296,39 @@ namespace HotelManager.Controllers
             return Json(new
             {
                 success = true,
-                message = $"{availableRooms} room(s) available",
+                message = $"{availableRooms} room(s) available.",
                 availableRooms,
                 nights,
                 total
             });
-
-
-
-
         }
-        [Authorize(Roles = "User")]
+
+        //====================================================
+        // View My Bookings
+        //====================================================
+
         public async Task<IActionResult> ViewBookings()
         {
-            var user = await _userManager.GetUserAsync(User);
-
-            if (user == null)
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            var customer = await _context.Customers
-                .FirstOrDefaultAsync(c => c.Email == user.Email);
-
-            if (customer == null)
-            {
-                return View(new List<Booking>());
-            }
-
             var bookings = await _context.Bookings
+                .Include(b => b.Customer)
                 .Include(b => b.Room)
-                    .ThenInclude(r => r.Hotel)
-                .Where(b => b.CustomerId == customer.CustomerId)
-                .OrderByDescending(b => b.CheckInDate)
+                .ThenInclude(r => r.Hotel)
+                .OrderByDescending(b => b.BookingId)
                 .ToListAsync();
 
             return View(bookings);
         }
+        //====================================================
+        // Booking Details
+        //====================================================
 
-
-        [Authorize(Roles = "User")]
         public async Task<IActionResult> Details(int id)
         {
-            var user = await _userManager.GetUserAsync(User);
-
-            if (user == null)
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            var customer = await _context.Customers
-                .FirstOrDefaultAsync(c => c.Email == user.Email);
-
-            if (customer == null)
-            {
-                return Unauthorized();
-            }
-
             var booking = await _context.Bookings
                 .Include(b => b.Customer)
                 .Include(b => b.Room)
                     .ThenInclude(r => r.Hotel)
-                .FirstOrDefaultAsync(b =>
-                    b.BookingId == id &&
-                    b.CustomerId == customer.CustomerId);
+                .FirstOrDefaultAsync(b => b.BookingId == id);
 
             if (booking == null)
             {

@@ -28,7 +28,7 @@ public class Booking
 
     [Required]
     public int RoomId { get; set; }
-
+    public bool IsActive { get; set; } = true;
     public virtual Customer Customer { get; set; }
     public virtual Room Room { get; set; }
     
