@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HotelManager.Data;
@@ -55,9 +55,9 @@ namespace HotelManager.Controllers
             return View(room);
         }
 
-        // =========================
-        // DTOs
-        // =========================
+
+
+        
         public class AvailabilityRequest
         {
             public int RoomId { get; set; }
@@ -77,9 +77,7 @@ namespace HotelManager.Controllers
             public string PhoneNumber { get; set; }
         }
 
-        // =========================
         // CHECK AVAILABILITY
-        // =========================
         [HttpPost]
         public async Task<IActionResult> CheckAvailability([FromBody] AvailabilityRequest request)
         {
@@ -113,9 +111,7 @@ namespace HotelManager.Controllers
             });
         }
 
-        // =========================
         // BOOK ROOM
-        // =========================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> BookRoom([FromForm] BookingRequest request)
