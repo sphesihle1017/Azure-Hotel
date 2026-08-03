@@ -4,7 +4,7 @@
 
 ## 🏠 Home Page
 
-![Home Page](Screenshots/Screenshot%202026-08-03%20115837.png)
+![Home Page](Screenshots/Screenshot%202026-08-03%20115914.png)
 
 The Home Page welcomes visitors to Azure Heights Hotels with a luxurious hero banner, elegant navigation, and a prominent **Book Now** button. It provides quick access to the hotel's rooms, services, about page, enquiries, and secure login.
 
