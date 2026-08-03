@@ -63,6 +63,13 @@
                             <span asp-validation-for="PricePerNight" class="text-danger"></span>
                             <small class="text-muted">Enter price in Rand (e.g., 1500.00)</small>
                         </div>
+                        <div class="mb-3">
+                            <label asp-for="Quantity" class="form-label"></label>
+
+                            <input asp-for="Quantity" class="form-control" />
+
+                            <span asp-validation-for="Quantity" class="text-danger"></span>
+                        </div>
 
                         <div class="form-group mt-4">
                             <button type="submit" class="btn btn-primary">

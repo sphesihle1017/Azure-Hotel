@@ -1,0 +1,209 @@
+﻿@model HotelManager.Models.Booking
+
+@{
+    ViewData["Title"] = "Booking Details";
+    Layout = "_Layout";
+
+    var nights = (Model.CheckOutDate - Model.CheckInDate).Days;
+
+    string status = "Upcoming";
+    string badge = "bg-success";
+
+    if (DateTime.Today >= Model.CheckInDate &&
+       DateTime.Today < Model.CheckOutDate)
+    {
+        status = "Checked In";
+        badge = "bg-warning text-dark";
+    }
+
+    if (DateTime.Today > Model.CheckOutDate)
+    {
+        status = "Completed";
+        badge = "bg-secondary";
+    }
+}
+
+<style>
+    .footer {
+        visibility: hidden;
+    }
+
+    .detail-card {
+        border-radius: 15px;
+    }
+</style>
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+            <h2>Booking Details</h2>
+            <p class="text-muted">
+                Booking #@Model.BookingId
+            </p>
+        </div>
+
+        <a asp-action="ViewBookings"
+           class="btn btn-outline-primary">
+
+            <i class="bi bi-arrow-left"></i>
+
+            Back
+
+        </a>
+
+    </div>
+
+    <div class="card shadow detail-card">
+
+        <div class="card-header bg-primary text-white">
+
+            <div class="d-flex justify-content-between">
+
+                <h4 class="mb-0">
+
+                    @Model.Room.Hotel.Name
+
+                </h4>
+
+                <span class="badge @badge">
+
+                    @status
+
+                </span>
+
+            </div>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-6 mb-4">
+
+                    <h5>Guest Information</h5>
+
+                    <hr />
+
+                    <p>
+
+                        <strong>Name</strong><br />
+
+                        @Model.Customer.FirstName
+                        @Model.Customer.LastName
+
+                    </p>
+
+                    <p>
+
+                        <strong>Email</strong><br />
+
+                        @Model.Customer.Email
+
+                    </p>
+
+                    <p>
+
+                        <strong>Phone</strong><br />
+
+                        @Model.Customer.PhoneNumber
+
+                    </p>
+
+                </div>
+
+                <div class="col-md-6 mb-4">
+
+                    <h5>Hotel Information</h5>
+
+                    <hr />
+
+                    <p>
+
+                        <strong>Hotel</strong><br />
+
+                        @Model.Room.Hotel.Name
+
+                    </p>
+
+                    <p>
+
+                        <strong>Location</strong><br />
+
+                        @Model.Room.Hotel.Location
+
+                    </p>
+
+                    <p>
+
+                        <strong>Room Type</strong><br />
+
+                        @Model.Room.RoomDescription
+
+                    </p>
+
+                </div>
+
+            </div>
+
+            <hr />
+
+            <div class="row text-center">
+
+                <div class="col-md-3">
+
+                    <h6>Check-In</h6>
+
+                    <h5>
+
+                        @Model.CheckInDate.ToString("dd MMM yyyy")
+
+                    </h5>
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <h6>Check-Out</h6>
+
+                    <h5>
+
+                        @Model.CheckOutDate.ToString("dd MMM yyyy")
+
+                    </h5>
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <h6>Nights</h6>
+
+                    <h5>
+
+                        @nights
+
+                    </h5>
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <h6>Total Paid</h6>
+
+                    <h5 class="text-success">
+
+                        R @Model.TotalAmount.ToString("N2")
+
+                    </h5>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

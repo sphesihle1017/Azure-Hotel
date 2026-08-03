@@ -1,0 +1,241 @@
+﻿@model HotelManager.Models.Booking
+
+@{
+    ViewData["Title"] = "Booking Receipt";
+    Layout = "_Layout";
+}
+
+<style>
+    .footer {
+        visibility: hidden;
+    }
+
+    .receipt-card {
+        max-width: 900px;
+        margin: auto;
+        border-radius: 15px;
+    }
+
+    .receipt-header {
+        background: #198754;
+        color: white;
+        border-radius: 15px 15px 0 0;
+    }
+
+    .receipt-table td {
+        padding: 12px;
+    }
+
+    .total {
+        font-size: 24px;
+        font-weight: bold;
+        color: #198754;
+    }
+
+    @@media print {
+
+        .no-print {
+            display: none;
+        }
+
+        body {
+            background: white;
+        }
+
+        .receipt-card {
+            border: none;
+            box-shadow: none;
+        }
+    }
+</style>
+
+<div class="container mt-5">
+
+    <div class="card shadow receipt-card">
+
+        <div class="card-header receipt-header">
+
+            <div class="d-flex justify-content-between align-items-center">
+
+                <div>
+                    <h2 class="mb-0">
+                        Booking Confirmation
+                    </h2>
+
+                    <small>
+                        Thank you for booking with us.
+                    </small>
+                </div>
+
+                <div class="text-end">
+
+                    <h4>
+                        Booking #@Model.BookingId
+                    </h4>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="alert alert-success">
+
+                <h5 class="mb-1">
+                    ✓ Booking Confirmed Successfully
+                </h5>
+
+                Your reservation has been received.
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-6">
+
+                    <h4>Guest Details</h4>
+
+                    <table class="table receipt-table">
+
+                        <tr>
+                            <td><strong>Name</strong></td>
+                            <td>@Model.Customer.FirstName @Model.Customer.LastName</td>
+                        </tr>
+
+                        <tr>
+                            <td><strong>Email</strong></td>
+                            <td>@Model.Customer.Email</td>
+                        </tr>
+
+                        <tr>
+                            <td><strong>Phone</strong></td>
+                            <td>@Model.Customer.PhoneNumber</td>
+                        </tr>
+
+                    </table>
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <h4>Hotel Details</h4>
+
+                    <table class="table receipt-table">
+
+                        <tr>
+                            <td><strong>Hotel</strong></td>
+                            <td>@Model.Room.Hotel.Name</td>
+                        </tr>
+
+                        <tr>
+                            <td><strong>Location</strong></td>
+                            <td>@Model.Room.Hotel.Location</td>
+                        </tr>
+
+                        <tr>
+                            <td><strong>Room Type</strong></td>
+                            <td>@Model.Room.RoomDescription</td>
+                        </tr>
+
+                        <tr>
+                            <td><strong>Price Per Night</strong></td>
+                            <td>R @Model.Room.PricePerNight.ToString("N2")</td>
+                        </tr>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+            <hr />
+
+            @{
+                var nights = (Model.CheckOutDate - Model.CheckInDate).Days;
+            }
+
+            <h4>Reservation Details</h4>
+
+            <table class="table table-bordered">
+
+                <thead class="table-light">
+
+                    <tr>
+
+                        <th>Check-In</th>
+                        <th>Check-Out</th>
+                        <th>Nights</th>
+                        <th>Total Amount</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    <tr>
+
+                        <td>@Model.CheckInDate.ToString("dd MMM yyyy")</td>
+
+                        <td>@Model.CheckOutDate.ToString("dd MMM yyyy")</td>
+
+                        <td>@nights</td>
+
+                        <td class="total">
+                            R @Model.TotalAmount.ToString("N2")
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+            <div class="alert alert-info mt-4">
+
+                <strong>Important Information</strong>
+
+                <ul class="mb-0 mt-2">
+
+                    <li>Please present this booking receipt during check-in.</li>
+
+                    <li>Check-in starts at <strong>14:00</strong>.</li>
+
+                    <li>Check-out is before <strong>10:00</strong>.</li>
+
+                    <li>For any changes, please contact the hotel directly.</li>
+
+                </ul>
+
+            </div>
+
+        </div>
+
+        <div class="card-footer text-center no-print">
+
+            <button onclick="window.print()"
+                    class="btn btn-success">
+
+                <i class="bi bi-printer"></i>
+
+                Print Receipt
+
+            </button>
+
+            <a asp-controller="Dashboard"
+               asp-action="Index"
+               class="btn btn-primary">
+
+                <i class="bi bi-house"></i>
+
+                Back to Dashboard
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>

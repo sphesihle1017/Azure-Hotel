@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HotelManager.Data;
-using Microsoft.AspNetCore.Identity;
 using HotelManager.Models;
 
 namespace HotelManager.Controllers
@@ -11,95 +11,103 @@ namespace HotelManager.Controllers
     public class DashboardController : Controller
     {
         private readonly AppDbContext _context;
-        private readonly UserManager<Users> _userManager; // Changed from IdentityUser to Users
+        private readonly UserManager<Users> _userManager;
 
-        public DashboardController(AppDbContext context, UserManager<Users> userManager) // Changed parameter type
+        public DashboardController(
+            AppDbContext context,
+            UserManager<Users> userManager)
         {
             _context = context;
             _userManager = userManager;
         }
 
-        // GET: /Dashboard/Index - Redirects based on user role
+        //==========================================================
+        // Redirect
+        //==========================================================
+
         public IActionResult Index()
         {
             if (User.IsInRole("Admin"))
-            {
-                return RedirectToAction("Admin");
-            }
-            return RedirectToAction("Customer");
+                return RedirectToAction(nameof(Admin));
+
+            return RedirectToAction(nameof(Customer));
         }
 
-        // GET: /Dashboard/Customer - Customer dashboard showing available rooms and history
+        //==========================================================
+        // CUSTOMER DASHBOARD
+        //==========================================================
+
         [Authorize(Roles = "User")]
         public async Task<IActionResult> Customer()
         {
-            var availableRooms = await _context.Rooms
+            var rooms = await _context.Rooms
                 .Include(r => r.Hotel)
+                .Where(r => r.Quantity > 0)
+                .OrderBy(r => r.Hotel.Name)
+                .ThenBy(r => r.RoomDescription)
                 .ToListAsync();
-            return View(availableRooms);
+
+            return View(rooms);
         }
 
-        // GET: /Dashboard/AvailableRooms - Shows available rooms for customers
+        //==========================================================
+        // AVAILABLE ROOMS
+        //==========================================================
+
         [Authorize(Roles = "User")]
         public async Task<IActionResult> AvailableRooms()
         {
-            var availableRooms = await _context.Rooms
+            var rooms = await _context.Rooms
                 .Include(r => r.Hotel)
+                .Where(r => r.Quantity > 0)
+                .OrderBy(r => r.Hotel.Name)
+                .ThenBy(r => r.RoomDescription)
                 .ToListAsync();
-            return View(availableRooms);
+
+            return View(rooms);
         }
 
-        // GET: /Dashboard/MyBookings - Shows booking history for customers
+        //==========================================================
+        // MY BOOKINGS
+        //==========================================================
+
         [Authorize(Roles = "User")]
         public async Task<IActionResult> MyBookings()
         {
             var user = await _userManager.GetUserAsync(User);
+
             if (user == null)
-            {
                 return RedirectToAction("Login", "Account");
-            }
 
             var customer = await _context.Customers
-                .FirstOrDefaultAsync(c => c.Email == user.Email);
+                .FirstOrDefaultAsync(c =>
+                    c.Email == user.Email &&
+                    c.IsActive);
 
             if (customer == null)
             {
-                return View(new List<Booking>());
+                TempData["Error"] =
+                    "Your account has been deactivated. Please contact the administrator.";
+
+                return RedirectToAction("Logout", "Account");
             }
 
             var bookings = await _context.Bookings
                 .Include(b => b.Room)
-                .ThenInclude(r => r.Hotel)
-                .Where(b => b.CustomerId == customer.CustomerId)
-                .OrderByDescending(b => b.CheckInDate)
+                    .ThenInclude(r => r.Hotel)
+                .Where(b =>
+                    b.CustomerId == customer.CustomerId &&
+                    b.IsActive)
+                .OrderByDescending(b => b.BookingId)
                 .ToListAsync();
 
             return View(bookings);
         }
 
-        // GET: /Dashboard/Admin - Admin dashboard for managing customers and rooms
-        [Authorize(Roles = "Admin")]
-        //public async Task<IActionResult> Admin()
-        //{
-        //    // Get recent customers (last 10)
-        //    var recentCustomers = await _context.Customers
-        //        .OrderByDescending(c => c.CustomerId)
-        //        .Take(10)
-        //        .ToListAsync();
+        //==========================================================
+        // ADMIN DASHBOARD
+        //==========================================================
 
-        //    // Get recent rooms with hotel info
-        //    var recentRooms = await _context.Rooms
-        //        .Include(r => r.Hotel)
-        //        .OrderByDescending(r => r.RoomId)
-        //        .Take(10)
-        //        .ToListAsync();
-
-        //    // Pass data to view using ViewBag
-        //    ViewBag.RecentCustomers = recentCustomers;
-        //    ViewBag.RecentRooms = recentRooms;
-
-        //    return View();
-        //}
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Admin()
         {
@@ -127,55 +135,184 @@ namespace HotelManager.Controllers
                 .OrderByDescending(h => h.HotelId)
                 .Take(10)
                 .ToListAsync();
-            
+
             ViewBag.RecentCustomers = recentCustomers;
             ViewBag.RecentRooms = recentRooms;
             ViewBag.RecentBookings = recentBookings;
             ViewBag.RecentHotels = recentHotels;
 
+            // Dashboard Statistics
+            ViewBag.TotalCustomers = await _context.Customers
+                .CountAsync(c => c.IsActive);
+
+            ViewBag.TotalHotels = await _context.Hotels
+                .CountAsync();
+
+            ViewBag.TotalRooms = await _context.Rooms
+                .SumAsync(r => r.Quantity);
+
+            ViewBag.TotalBookings = await _context.Bookings
+                .CountAsync(b => b.IsActive);
+
+            ViewBag.CancelledBookings = await _context.Bookings
+                .CountAsync(b => !b.IsActive);
+
+            ViewBag.InactiveCustomers = await _context.Customers
+                .CountAsync(c => !c.IsActive);
+
             return View();
         }
-        // GET: /Dashboard/ManageCustomers - Manage customers (Admin only)
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> ManageCustomers()
+        public async Task<IActionResult> ManageCustomers(string searchString)
         {
-            // Select only the properties you need
-            var customers = await _context.Customers
-                .Select(c => new Customer
-                {
-                    CustomerId = c.CustomerId,
-                    FirstName = c.FirstName,
-                    LastName = c.LastName,
-                    Email = c.Email,
-                    PhoneNumber = c.PhoneNumber,
-                    Bookings = c.Bookings.Select(b => new Booking
-                    {
-                        BookingId = b.BookingId,
-                        CheckInDate = b.CheckInDate,
-                        CheckOutDate = b.CheckOutDate,
-                        TotalAmount = b.TotalAmount,
-                        CustomerId = b.CustomerId,
-                        RoomId = b.RoomId
-                    }).ToList()
-                })
-                .ToListAsync();
+            var customers = _context.Customers
+                .Include(c => c.Bookings)
+                .OrderByDescending(c => c.CustomerId)
+                .AsQueryable();
 
-            return View(customers);
+            if (!string.IsNullOrWhiteSpace(searchString))
+            {
+                customers = customers.Where(c =>
+                    c.FirstName.Contains(searchString) ||
+                    c.LastName.Contains(searchString) ||
+                    c.Email.Contains(searchString) ||
+                    c.PhoneNumber.Contains(searchString));
+            }
+
+            ViewBag.SearchString = searchString;
+
+            return View(await customers.ToListAsync());
         }
-        // GET: /Dashboard/Rooms - List all rooms (Admin only)
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Rooms()
         {
             var rooms = await _context.Rooms
                 .Include(r => r.Hotel)
+                .Include(r => r.Bookings)
                 .OrderBy(r => r.Hotel.Name)
                 .ThenBy(r => r.RoomDescription)
                 .ToListAsync();
 
             return View(rooms);
         }
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ViewBookings()
+        {
+            var bookings = await _context.Bookings
+                .Include(b => b.Customer)
+                .Include(b => b.Room)
+                    .ThenInclude(r => r.Hotel)
+                .OrderByDescending(b => b.BookingId)
+                .ToListAsync();
 
-        // GET: /Dashboard/CreateRoom - Create new room (Admin only)
+            return View(bookings);
+        }
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelBooking(int id)
+        {
+            try
+            {
+                var booking = await _context.Bookings
+                    .Include(b => b.Customer)
+                    .FirstOrDefaultAsync(b => b.BookingId == id);
+
+                if (booking == null)
+                {
+                    TempData["Error"] = "Booking not found.";
+                    return RedirectToAction(nameof(ViewBookings));
+                }
+
+                booking.IsActive = !booking.IsActive;
+
+                _context.Bookings.Update(booking);
+
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = booking.IsActive
+                    ? "Booking activated successfully."
+                    : "Booking cancelled successfully.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = ex.Message;
+            }
+
+            return RedirectToAction(nameof(ViewBookings));
+        }
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteCustomer(int id)
+        {
+            try
+            {
+                var customer = await _context.Customers
+                    .Include(c => c.Bookings)
+                    .FirstOrDefaultAsync(c => c.CustomerId == id);
+
+                if (customer == null)
+                {
+                    TempData["Error"] = "Customer not found.";
+                    return RedirectToAction(nameof(ManageCustomers));
+                }
+
+                customer.IsActive = !customer.IsActive;
+
+                foreach (var booking in customer.Bookings)
+                {
+                    booking.IsActive = customer.IsActive;
+                }
+
+                _context.Update(customer);
+
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = customer.IsActive
+                    ? "Customer activated successfully."
+                    : "Customer deactivated successfully.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = ex.Message;
+            }
+
+            return RedirectToAction(nameof(ManageCustomers));
+        }
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CustomerDetails(int id)
+        {
+            var customer = await _context.Customers
+                .Include(c => c.Bookings)
+                    .ThenInclude(b => b.Room)
+                        .ThenInclude(r => r.Hotel)
+                .FirstOrDefaultAsync(c => c.CustomerId == id);
+
+            if (customer == null)
+                return NotFound();
+
+            return View(customer);
+        }
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> RoomDetails(int id)
+        {
+            var room = await _context.Rooms
+                .Include(r => r.Hotel)
+                .Include(r => r.Bookings)
+                    .ThenInclude(b => b.Customer)
+                .FirstOrDefaultAsync(r => r.RoomId == id);
+
+            if (room == null)
+                return NotFound();
+
+            ViewBag.BookedRooms = room.Bookings.Count(b => b.IsActive);
+
+            ViewBag.AvailableRooms =
+                room.Quantity - room.Bookings.Count(b => b.IsActive);
+
+            return View(room);
+        }
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateRoom()
         {
@@ -183,8 +320,6 @@ namespace HotelManager.Controllers
             return View();
         }
 
-        // POST: /Dashboard/CreateRoom - Create new room (Admin only)
-       
         [HttpPost]
         [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
@@ -192,235 +327,122 @@ namespace HotelManager.Controllers
         {
             try
             {
-                // Log the incoming data for debugging
-                Console.WriteLine($"Creating Room - HotelId: {room.HotelId}, Description: {room.RoomDescription}, Price: {room.PricePerNight}");
-
-                // Remove validation for navigation property if it's causing issues
                 ModelState.Remove("Hotel");
                 ModelState.Remove("Bookings");
 
-                // Manual validation
                 if (room.HotelId <= 0)
-                {
                     ModelState.AddModelError("HotelId", "Please select a hotel.");
-                }
 
-                if (string.IsNullOrEmpty(room.RoomDescription))
-                {
+                if (string.IsNullOrWhiteSpace(room.RoomDescription))
                     ModelState.AddModelError("RoomDescription", "Please select a room type.");
-                }
-                else if (!new[] { "Deluxe", "Premium", "Presidential" }.Contains(room.RoomDescription))
-                {
-                    ModelState.AddModelError("RoomDescription", "Invalid room type selected.");
-                }
 
                 if (room.PricePerNight <= 0)
+                    ModelState.AddModelError("PricePerNight", "Price must be greater than zero.");
+
+                if (room.Quantity <= 0)
+                    ModelState.AddModelError("Quantity", "Quantity must be greater than zero.");
+
+                if (!ModelState.IsValid)
                 {
-                    ModelState.AddModelError("PricePerNight", "Price must be greater than 0.");
+                    ViewBag.Hotels = await _context.Hotels.ToListAsync();
+                    return View(room);
                 }
 
-                if (ModelState.IsValid)
+                var hotelExists = await _context.Hotels
+                    .AnyAsync(h => h.HotelId == room.HotelId);
+
+                if (!hotelExists)
                 {
-                    // Verify hotel exists
-                    var hotelExists = await _context.Hotels.AnyAsync(h => h.HotelId == room.HotelId);
-                    if (!hotelExists)
-                    {
-                        TempData["Error"] = "Selected hotel does not exist.";
-                        ViewBag.Hotels = await _context.Hotels.ToListAsync();
-                        return View(room);
-                    }
-
-                    _context.Add(room);
-                    await _context.SaveChangesAsync();
-
-                    TempData["Success"] = $"Room created successfully!";
-                    return RedirectToAction(nameof(Rooms));
+                    TempData["Error"] = "Selected hotel does not exist.";
+                    ViewBag.Hotels = await _context.Hotels.ToListAsync();
+                    return View(room);
                 }
-            }
-            catch (DbUpdateException ex)
-            {
-                var innerMessage = ex.InnerException?.Message ?? ex.Message;
-                TempData["Error"] = $"Database error: {innerMessage}";
-                Console.WriteLine($"Error creating room: {innerMessage}");
+
+                _context.Rooms.Add(room);
+
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = "Room created successfully.";
+
+                return RedirectToAction(nameof(Rooms));
             }
             catch (Exception ex)
             {
-                TempData["Error"] = $"Error creating room: {ex.Message}";
-                Console.WriteLine($"Error creating room: {ex.Message}");
+                TempData["Error"] = ex.Message;
+
+                ViewBag.Hotels = await _context.Hotels.ToListAsync();
+
+                return View(room);
             }
-
-            // If we got this far, something failed, redisplay form
-            ViewBag.Hotels = await _context.Hotels.ToListAsync();
-            return View(room);
         }
-
-        // GET: /Dashboard/EditRoom/{id} - Edit room (Admin only)
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> EditRoom(int id)
         {
             var room = await _context.Rooms.FindAsync(id);
+
             if (room == null)
-            {
                 return NotFound();
-            }
+
             ViewBag.Hotels = await _context.Hotels.ToListAsync();
+
             return View(room);
         }
 
-        // POST: /Dashboard/EditRoom/{id} - Edit room (Admin only)
-      
         [HttpPost]
         [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditRoom(int id, Room room)
         {
             if (id != room.RoomId)
-            {
                 return NotFound();
-            }
 
             try
             {
-                // Remove navigation properties from ModelState validation
                 ModelState.Remove("Hotel");
                 ModelState.Remove("Bookings");
 
-                // Manual validation
                 if (room.HotelId <= 0)
-                {
                     ModelState.AddModelError("HotelId", "Please select a hotel.");
-                }
 
-                if (string.IsNullOrEmpty(room.RoomDescription))
-                {
+                if (string.IsNullOrWhiteSpace(room.RoomDescription))
                     ModelState.AddModelError("RoomDescription", "Please select a room type.");
-                }
-                else if (!new[] { "Deluxe", "Premium", "Presidential" }.Contains(room.RoomDescription))
-                {
-                    ModelState.AddModelError("RoomDescription", "Invalid room type selected.");
-                }
 
                 if (room.PricePerNight <= 0)
+                    ModelState.AddModelError("PricePerNight", "Price must be greater than zero.");
+
+                if (room.Quantity <= 0)
+                    ModelState.AddModelError("Quantity", "Quantity must be greater than zero.");
+
+                if (!ModelState.IsValid)
                 {
-                    ModelState.AddModelError("PricePerNight", "Price must be greater than 0.");
+                    ViewBag.Hotels = await _context.Hotels.ToListAsync();
+                    return View(room);
                 }
 
-                if (ModelState.IsValid)
-                {
-                    // Check if hotel exists
-                    var hotelExists = await _context.Hotels.AnyAsync(h => h.HotelId == room.HotelId);
-                    if (!hotelExists)
-                    {
-                        ModelState.AddModelError("HotelId", "Selected hotel does not exist.");
-                        ViewBag.Hotels = await _context.Hotels.ToListAsync();
-                        return View(room);
-                    }
+                var existingRoom = await _context.Rooms.FindAsync(id);
 
-                    // Get the existing room from database
-                    var existingRoom = await _context.Rooms
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(r => r.RoomId == id);
-
-                    if (existingRoom == null)
-                    {
-                        return NotFound();
-                    }
-
-                    // Update only the fields that should be changed
-                    existingRoom = new Room
-                    {
-                        RoomId = id,
-                        HotelId = room.HotelId,
-                        RoomDescription = room.RoomDescription,
-                        PricePerNight = room.PricePerNight
-                    };
-
-                    _context.Update(existingRoom);
-                    await _context.SaveChangesAsync();
-
-                    TempData["Success"] = $"Room {id} updated successfully!";
-                    return RedirectToAction(nameof(Rooms));
-                }
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                if (!RoomExists(room.RoomId))
-                {
+                if (existingRoom == null)
                     return NotFound();
-                }
-                else
-                {
-                    TempData["Error"] = $"Concurrency error: {ex.Message}";
-                }
+
+                existingRoom.HotelId = room.HotelId;
+                existingRoom.RoomDescription = room.RoomDescription;
+                existingRoom.PricePerNight = room.PricePerNight;
+                existingRoom.Quantity = room.Quantity;
+
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = "Room updated successfully.";
+
+                return RedirectToAction(nameof(Rooms));
             }
             catch (Exception ex)
             {
-                TempData["Error"] = $"Error updating room: {ex.Message}";
+                TempData["Error"] = ex.Message;
+
+                ViewBag.Hotels = await _context.Hotels.ToListAsync();
+
+                return View(room);
             }
-
-            // If we got this far, something failed, redisplay form
-            ViewBag.Hotels = await _context.Hotels.ToListAsync();
-            return View(room);
-        }
-
-        // POST: /Dashboard/DeleteRoom/{id} - Delete room (Admin only)
-        [HttpPost]
-        [Authorize(Roles = "Admin")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteRoom(int id)
-        {
-            var room = await _context.Rooms.FindAsync(id);
-            if (room != null)
-            {
-                // Check if room has any bookings
-                var hasBookings = await _context.Bookings.AnyAsync(b => b.RoomId == id);
-                if (hasBookings)
-                {
-                    TempData["Error"] = "Cannot delete room with existing bookings.";
-                    return RedirectToAction(nameof(Rooms));
-                }
-
-                _context.Rooms.Remove(room);
-                await _context.SaveChangesAsync();
-                TempData["Success"] = "Room deleted successfully!";
-            }
-            return RedirectToAction(nameof(Rooms));
-        }
-
-        // POST: /Dashboard/DeleteCustomer/{id} - Delete customer (Admin only)
-        [HttpPost]
-        [Authorize(Roles = "Admin")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteCustomer(int id)
-        {
-            var customer = await _context.Customers.FindAsync(id);
-            if (customer != null)
-            {
-                // Check if customer has any bookings
-                var hasBookings = await _context.Bookings.AnyAsync(b => b.CustomerId == id);
-                if (hasBookings)
-                {
-                    TempData["Error"] = "Cannot delete customer with existing bookings.";
-                    return RedirectToAction(nameof(ManageCustomers));
-                }
-
-                // Also delete the associated Identity user
-                var user = await _userManager.FindByEmailAsync(customer.Email);
-                if (user != null)
-                {
-                    await _userManager.DeleteAsync(user);
-                }
-
-                _context.Customers.Remove(customer);
-                await _context.SaveChangesAsync();
-                TempData["Success"] = "Customer deleted successfully!";
-            }
-            return RedirectToAction(nameof(ManageCustomers));
-        }
-
-        private bool RoomExists(int id)
-        {
-            return _context.Rooms.Any(e => e.RoomId == id);
         }
     }
 }

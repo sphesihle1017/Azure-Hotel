@@ -1,0 +1,200 @@
+﻿@model IEnumerable<HotelManager.Models.Booking>
+
+@{
+    ViewData["Title"] = "My Bookings";
+    Layout = "_Layout";
+}
+
+<style>
+    .footer {
+        visibility: hidden;
+    }
+
+    .booking-card {
+        transition: .3s;
+        border-radius: 15px;
+    }
+
+        .booking-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,.15);
+        }
+
+    .status {
+        font-size: .9rem;
+        font-weight: bold;
+    }
+</style>
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+            <h2>My Bookings</h2>
+            <p class="text-muted">
+                View your current and previous hotel bookings.
+            </p>
+        </div>
+
+        <a asp-controller="Dashboard"
+           asp-action="Customer"
+           class="btn btn-outline-primary">
+
+            <i class="bi bi-arrow-left"></i>
+            Dashboard
+
+        </a>
+
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center">
+
+            <h4>No Bookings Found</h4>
+
+            <p>
+                You haven't made any bookings yet.
+            </p>
+
+            <a asp-controller="Hotels"
+               asp-action="Index"
+               class="btn btn-primary">
+
+                Browse Hotels
+
+            </a>
+
+        </div>
+    }
+    else
+    {
+        <div class="row">
+
+            @foreach (var booking in Model)
+            {
+                var today = DateTime.Today;
+
+                string badge = "bg-success";
+                string status = "Upcoming";
+
+                if (today >= booking.CheckInDate && today < booking.CheckOutDate)
+                {
+                    badge = "bg-warning text-dark";
+                    status = "Checked In";
+                }
+
+                if (today > booking.CheckOutDate)
+                {
+                    badge = "bg-secondary";
+                    status = "Completed";
+                }
+
+                <div class="col-lg-6 mb-4">
+
+                    <div class="card booking-card shadow-sm">
+
+                        <div class="card-header d-flex justify-content-between align-items-center">
+
+                            <h5 class="mb-0">
+                                @booking.Room.Hotel.Name
+                            </h5>
+
+                            <span class="badge @badge status">
+                                @status
+                            </span>
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <div class="row">
+
+                                <div class="col-6">
+
+                                    <strong>Room</strong><br />
+
+                                    @booking.Room.RoomDescription
+
+                                </div>
+
+                                <div class="col-6">
+
+                                    <strong>Total Paid</strong><br />
+
+                                    R @booking.TotalAmount.ToString("N2")
+
+                                </div>
+
+                            </div>
+
+                            <hr />
+
+                            <div class="row">
+
+                                <div class="col-6">
+
+                                    <strong>Check In</strong><br />
+
+                                    @booking.CheckInDate.ToString("dd MMM yyyy")
+
+                                </div>
+
+                                <div class="col-6">
+
+                                    <strong>Check Out</strong><br />
+
+                                    @booking.CheckOutDate.ToString("dd MMM yyyy")
+
+                                </div>
+
+                            </div>
+
+                            <hr />
+
+                            <div class="row">
+
+                                <div class="col-6">
+
+                                    <strong>Booking #</strong><br />
+
+                                    @booking.BookingId
+
+                                </div>
+
+                                <div class="col-6">
+
+                                    <strong>Nights</strong><br />
+
+                                    @((booking.CheckOutDate - booking.CheckInDate).Days)
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="card-footer bg-white">
+
+                            <a asp-action="Details"
+                               asp-route-id="@booking.BookingId"
+                               class="btn btn-primary btn-sm">
+
+                                <i class="bi bi-eye"></i>
+
+                                View Details
+
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            }
+
+        </div>
+    }
+
+</div>

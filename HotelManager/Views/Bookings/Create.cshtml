@@ -1,0 +1,405 @@
+﻿@model HotelManager.ViewModels.BookingViewModel
+
+@{
+    ViewData["Title"] = "Book Room";
+    Layout = "_Layout";
+}
+
+<style>
+    footer {
+        visibility: hidden;
+    }
+
+    .room-card,
+    .booking-card {
+        border-radius: 15px;
+    }
+
+    .summary-box {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        border: 1px solid #dee2e6;
+    }
+</style>
+
+<div class="container mt-5">
+
+    <div class="row">
+
+        <!-- ================= ROOM DETAILS ================= -->
+
+        <div class="col-lg-4">
+
+            <div class="card room-card shadow">
+
+                <div class="card-header bg-primary text-white">
+
+                    <h4 class="mb-0">
+                        Room Details
+                    </h4>
+
+                </div>
+
+                <div class="card-body">
+
+                    <p>
+                        <strong>Hotel</strong><br />
+                        @Model.HotelName
+                    </p>
+
+                    <hr />
+
+                    <p>
+                        <strong>Room Type</strong><br />
+                        @Model.RoomDescription
+                    </p>
+
+                    <hr />
+
+                    <p>
+                        <strong>Price Per Night</strong><br />
+                        <span class="text-success fw-bold">
+                            R @Model.PricePerNight.ToString("N2")
+                        </span>
+                    </p>
+
+                    <hr />
+
+                    <p>
+                        <strong>Total Rooms Available</strong><br />
+                        @Model.Quantity
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ================= BOOKING ================= -->
+
+        <div class="col-lg-8">
+
+            <div class="card booking-card shadow">
+
+                <div class="card-header bg-success text-white">
+
+                    <h4 class="mb-0">
+                        Booking Information
+                    </h4>
+
+                </div>
+
+                <div class="card-body">
+
+                    <form asp-action="Create" method="post">
+
+                        @Html.AntiForgeryToken()
+
+                        <input asp-for="RoomId" type="hidden" />
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="alert alert-danger">
+                        </div>
+
+                        <!-- ================= Guest ================= -->
+
+                        <h5 class="mb-3">
+                            Guest Information
+                        </h5>
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label asp-for="FirstName"
+                                       class="form-label">
+                                </label>
+
+                                <input asp-for="FirstName"
+                                       class="form-control" />
+
+                                <span asp-validation-for="FirstName"
+                                      class="text-danger"></span>
+
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+
+                                <label asp-for="LastName"
+                                       class="form-label">
+                                </label>
+
+                                <input asp-for="LastName"
+                                       class="form-control" />
+
+                                <span asp-validation-for="LastName"
+                                      class="text-danger"></span>
+
+                            </div>
+
+                        </div>
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label asp-for="Email"
+                                       class="form-label">
+                                </label>
+
+                                <input asp-for="Email"
+                                       class="form-control" />
+
+                                <span asp-validation-for="Email"
+                                      class="text-danger"></span>
+
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+
+                                <label asp-for="PhoneNumber"
+                                       class="form-label">
+                                </label>
+
+                                <input asp-for="PhoneNumber"
+                                       class="form-control" />
+
+                                <span asp-validation-for="PhoneNumber"
+                                      class="text-danger"></span>
+
+                            </div>
+
+                        </div>
+
+                        <hr />
+
+                        <!-- ================= Dates ================= -->
+
+                        <h5 class="mb-3">
+                            Booking Dates
+                        </h5>
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label asp-for="CheckInDate"
+                                       class="form-label">
+                                </label>
+
+                                <input asp-for="CheckInDate"
+                                       type="date"
+                                       class="form-control" />
+
+                                <span asp-validation-for="CheckInDate"
+                                      class="text-danger"></span>
+
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+
+                                <label asp-for="CheckOutDate"
+                                       class="form-label">
+                                </label>
+
+                                <input asp-for="CheckOutDate"
+                                       type="date"
+                                       class="form-control" />
+
+                                <span asp-validation-for="CheckOutDate"
+                                      class="text-danger"></span>
+
+                            </div>
+
+                        </div>
+
+                        <hr />
+
+                        <!-- ================= Summary ================= -->
+
+                        <div class="summary-box mb-4">
+
+                            <div class="row text-center">
+
+                                <div class="col-md-4">
+
+                                    <h6>Nights</h6>
+
+                                    <h3 id="nights">0</h3>
+
+                                </div>
+
+                                <div class="col-md-4">
+
+                                    <h6>Total Price</h6>
+
+                                    <h3 class="text-success"
+                                        id="totalPrice">
+
+                                        R 0.00
+
+                                    </h3>
+
+                                </div>
+
+                                <div class="col-md-4">
+
+                                    <h6>Status</h6>
+
+                                    <span id="availabilityMessage"
+                                          class="badge bg-secondary">
+
+                                        Select dates
+
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="d-flex gap-2">
+
+                            <button type="button"
+                                    id="btnCheckAvailability"
+                                    class="btn btn-primary">
+
+                                <i class="bi bi-search"></i>
+
+                                Check Availability
+
+                            </button>
+
+                            <button type="submit"
+                                    id="btnConfirmBooking"
+                                    class="btn btn-success"
+                                    disabled>
+
+                                <i class="bi bi-check-circle"></i>
+
+                                Confirm Booking
+
+                            </button>
+
+                            <a asp-controller="Dashboard"
+                               asp-action="Customer"
+                               class="btn btn-secondary">
+
+                                Cancel
+
+                            </a>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts{
+
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+<script>
+
+$(document).ready(function () {
+
+    $("#CheckInDate,#CheckOutDate").change(function () {
+
+        $("#btnConfirmBooking").prop("disabled", true);
+
+        $("#availabilityMessage")
+            .removeClass()
+            .addClass("badge bg-secondary")
+            .text("Select dates");
+
+        $("#nights").text("0");
+
+        $("#totalPrice").text("R 0.00");
+
+    });
+
+
+    $("#btnCheckAvailability").click(function () {
+
+        $.ajax({
+
+            url: '@Url.Action("CheckAvailability","Bookings")',
+
+            type: 'POST',
+
+            data: {
+
+                roomId: $("#RoomId").val(),
+
+                checkInDate: $("#CheckInDate").val(),
+
+                checkOutDate: $("#CheckOutDate").val()
+
+            },
+
+            success: function (result) {
+
+                if (result.success) {
+
+                    $("#availabilityMessage")
+                        .removeClass()
+                        .addClass("badge bg-success")
+                        .text(result.message);
+
+                    $("#nights").text(result.nights);
+
+                    $("#totalPrice").text("R " + result.total.toFixed(2));
+
+                    $("#btnConfirmBooking").prop("disabled", false);
+
+                }
+                else {
+
+                    $("#availabilityMessage")
+                        .removeClass()
+                        .addClass("badge bg-danger")
+                        .text(result.message);
+
+                    $("#nights").text("0");
+
+                    $("#totalPrice").text("R 0.00");
+
+                    $("#btnConfirmBooking").prop("disabled", true);
+
+                }
+
+            },
+
+            error: function () {
+
+                $("#availabilityMessage")
+                    .removeClass()
+                    .addClass("badge bg-danger")
+                    .text("An unexpected error occurred.");
+
+                $("#btnConfirmBooking").prop("disabled", true);
+
+            }
+
+        });
+
+    });
+
+});
+
+</script>
+
+}
